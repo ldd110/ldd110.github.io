@@ -1,3 +1,11 @@
+---
+layout: wiki
+title: 基础概念
+description: 基础概念
+categories: basic
+keywords: basic
+---
+
 ## [软件](https://zh.wikipedia.org/wiki/软件)
 x
 软件（英语：software）是一系列按照特定顺序组织的电脑数据和指示，是电脑中的非有形部分。电脑中的有形部分称为硬件，由电脑的外壳及各零件及电路所组成。电脑软件需有硬件才能运作，反之亦然，软件和硬件都无法在不互相配合的情形下进行实际的运作。
