@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-cmn-Hans" prefix="og: http://ogp.me/ns#" class="han-init">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <title>IPC之AIDL(2)in out inout &mdash; FSilence's Blog</title>
+    <link rel="stylesheet" href="/assets/vendor/primer-css/css/primer.css">
+    <link rel="stylesheet" href="/assets/vendor/primer-markdown/dist/user-content.min.css">
+    <link rel="stylesheet" href="/assets/vendor/octicons/octicons/octicons.css">
+    <link rel="stylesheet" href="/assets/css/components/collection.css">
+    <link rel="stylesheet" href="/assets/css/components/repo-card.css">
+    <link rel="stylesheet" href="/assets/css/sections/repo-list.css">
+    <link rel="stylesheet" href="/assets/css/sections/mini-repo-list.css">
+    <link rel="stylesheet" href="/assets/css/components/boxed-group.css">
+    <link rel="stylesheet" href="/assets/css/globals/common.css">
+    <link rel="stylesheet" href="/assets/vendor/share.js/dist/css/share.min.css">
+    <link rel="stylesheet" href="/assets/css/globals/responsive.css">
+    <link rel="stylesheet" href="/assets/css/posts/index.css">
+    <!-- Latest compiled and minified CSS -->
+    
+
+    
+    <link rel="canonical" href="http://localhost:4000/2017/05/12/IPC-AIDL-Android-2/">
+    <link rel="alternate" type="application/atom+xml" title="FSilence's Blog" href="">
+    <link rel="shortcut icon" href="/favicon.ico">
+    
+    <meta property="og:title" content="IPC之AIDL(2)in out inout">
+      
+    <meta name="keywords" content="android, IPC, AIDL, in, out, inout">
+    <meta name="og:keywords" content="android, IPC, AIDL, in, out, inout">
+      
+    <meta name="description" content="内容大纲：1.在AIDL的时候正确使用in out inout">
+    <meta name="og:description" content="内容大纲：1.在AIDL的时候正确使用in out inout">
+      
+    
+    
+        
+    
+    <meta property="og:url" content="http://localhost:4000/2017/05/12/IPC-AIDL-Android-2/">
+    <meta property="og:site_name" content="FSilence's Blog">
+    <meta property="og:type" content="article">
+    <meta property="og:locale" content="zh_CN" />
+    
+    <meta property="article:published_time" content="2017-05-12">
+    
+    <script src="/assets/vendor/jquery/dist/jquery.min.js"></script>
+    <script src="/assets/js/jquery-ui.js"></script>
+    <script type="text/javascript">
+    function toggleMenu() {
+        var nav = document.getElementsByClassName("site-header-nav")[0];
+        if (nav.style.display == "inline-flex") {
+          nav.style.display = "none";
+        } else {
+          nav.style.display = "inline-flex";
+        }
+    }
+
+	var _hmt = _hmt || [];
+	(function() {
+		var hm = document.createElement("script");
+		hm.src = "https://hm.baidu.com/hm.js?3a8f3e5734d78efb8fc1edf92dadd19e";
+	var s = document.getElementsByTagName("script")[0]; 
+	s.parentNode.insertBefore(hm, s);
+	})();
+
+    </script>
+</head>
+<body class="" data-mz="">
+    <header class="site-header">
+        <div class="container">
+            <h1><a href="/" title="FSilence's Blog"><span class="octicon octicon-mark-github"></span> FSilence's Blog</a></h1>
+            <button class="collapsed mobile-visible" type="button" onclick="toggleMenu();">
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <nav class="site-header-nav" role="navigation">
+                
+                <a href="/" class=" site-header-nav-item" target="" title="首页">首页</a>
+                
+                <a href="/categories/" class=" site-header-nav-item" target="" title="分类">分类</a>
+                
+                <a href="/wiki/" class=" site-header-nav-item" target="" title="维基">维基</a>
+                
+                <a href="/links/" class=" site-header-nav-item" target="" title="链接">链接</a>
+                
+                <a href="/about/" class=" site-header-nav-item" target="" title="关于">关于</a>
+                
+            </nav>
+        </div>
+    </header>
+    <!-- / header -->
+
+    <section class="collection-head small geopattern" data-pattern-id="IPC之AIDL(2)in o">
+<div class="container">
+  <div class="columns">
+    <div class="column three-fourths">
+      <div class="collection-title">
+        <h1 class="collection-header">IPC之AIDL(2)in out inout</h1>
+        <div class="collection-info">
+          
+          <span class="meta-info">
+            <span class="octicon octicon-calendar"></span> 2017/05/12
+          </span>
+          
+          
+          <span class="meta-info">
+            <span class="octicon octicon-file-directory"></span>
+            <a href="/categories/#android" title="android">android</a>
+          </span>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+<!-- / .banner -->
+<section class="container content">
+<div class="columns">
+  <div class="column three-fourths" >
+    <article class="article-content markdown-body">
+    <p>内容大纲：</p>
+<pre>
+1.在AIDL的时候正确使用in out inout
+</pre>
+
+<p>上一篇我们用AIDL简单实现了一个IPC，其中我们谈到在定义aidl接口中的除基本类型和AIDL接口外的参数要调价修饰符in out 或 inout中的一种，本文将帮助大家理解in out inout，并让读者可以正确的使用in out inout。<br />
+在介绍in out inout的区别之前我们先明确两个基本概念：起点 和 终点，起点指调用方，终点指响应方，比如我在客户端调用aidl接口那么客户端就是起点 服务端就是重点，在一次调用中服务端如果要调用一个aidl接口回调给客户端，那么服务端就是起点，客户端就是重点。<br />
+然后我们来定义in out inout:<br />
+in ： 将对象从起点传递给终点，在终点部分中对对象的修改不会反映到起点，即只输入<br />
+out : 对象中的值不会传递给终点，但是在终点部分对对象的修改会反映到起点，即只输出<br />
+intout : 将对象从起点传递给终点，在终点部分的修改会反应到起点，即输入输出都有影响</p>
+
+<p>我们再用一个具体的例子来看一下这个区分：
+我们来看下客户端的代码：<br />
+<code></code></p>
+<pre>
+        mServiceConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                mBookManager = IBookManager.Stub.asInterface(service);
+                try {
+                    mBookManager.registerListener(new IBookListener.Stub() {
+                        @Override
+                        public void onBookAdd(Book book) throws RemoteException {
+                            Log.i("wlh " , "addBook callback : " + book.name);
+                        }
+                    });
+                    Book book = new Book();
+                    book.name = "TestBook";
+                    mBookManager.addBook(book);
+                    Log.i("wlh",  book.name);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+                unbindService(mServiceConnection);
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+
+            }
+        };
+</pre>
+<p>&lt;/code&gt;</p>
+
+<p>我们输出了callback 调用addBook 和调用后book对象的名称。我们再来看下服务端的代码：<br />
+<code></code></p>
+<pre>
+    private IBinder mBinder = new IBookManager.Stub() {
+        @Override
+        public List<Book> getBookList() throws RemoteException {
+            Log.i("wlh", "getBookList");
+            return null;
+        }
+
+        @Override
+        public void addBook(Book book) throws RemoteException {
+            Log.i("wlh", "addBook : " + book.name);
+            int N = mCallbacks.beginBroadcast();
+            book.name += " : server";
+            for (int i = 0; i &lt; N; i++ ) {
+                mCallbacks.getBroadcastItem(i).onBookAdd(book);
+            }
+            mCallbacks.finishBroadcast();
+
+        }
+
+        @Override
+        public void registerListener(IBookListener listener) throws RemoteException {
+            mCallbacks.register(listener);
+        }
+
+        @Override
+        public void unRegisterListener(IBookListener listener) throws RemoteException {
+            mCallbacks.unregister(listener);
+        }
+    };
+&lt;/pre&gt;
+&lt;/code&gt;
+
+观察addBook方法 我们在客户端传过来的book中修改了name字段 追加了一个：server，然后我们输出了客户端传递过来的book名称。现在我们来看在book的修饰符分别为in out 和inout时候的系统输出。（我们假设BookListener中的参数都是in,其实BookListener中的in out inout修饰就是起点 和 终点的转换，这个时候起点是调用方服务端 终点是响应方客户端，具体的读者可自行分析）  
+
+in:   
+ 我们可以先猜测一下输出，in表示数据会传递到终点，那么服务端会输出TestBook，然后由于对对象的修改不会反映到起点，所以对象不会反映到客户端，客户端依然输出的是TestBook，而callback中的回调是TestBook : server,我们来看下实际效果：  
+
+![](/images/aidl2-1.png)  
+
+out:  
+out不会将数据传递到终点在这里也就是服务端，那么服务端会输出null， 然后由于对象修改会反应到起点也就是客户端，所以客户端会输出 null : server,我们来看下实际效果：  
+![](/images/aidl2-2.png)  
+
+inout:
+inout即会把数据传递到终点，起点也会响应终点的变化，那么服务端会输出 TestBook
+然后客户端输出 TestBook : server, 我们来看下实际效果：  
+![](/images/aidl2-3.png)  
+
+</Book></pre>
+
+    
+
+    </article>
+    <div class="share">
+      <div class="share-component"></div>
+    </div>
+    <div class="comment">
+      
+  
+      
+        
+        
+        
+      
+	  
+	
+
+<!--
+          <div id="disqus_thread"></div>
+          <script>
+            var disqus_config = function () {
+              this.page.url = 'http://localhost:4000/2017/05/12/IPC-AIDL-Android-2/';
+              this.page.identifier = '/2017/05/12/IPC-AIDL-Android-2/';
+              this.page.title = 'IPC之AIDL(2)in out inout';
+            };
+            (function() { // DON'T EDIT BELOW THIS LINE
+              var d = document, s = d.createElement('script');
+
+              s.type = 'text/javascript';
+              s.async = true;
+              var shortname = 'FSilence';
+
+              s.src = '//' + shortname + '.disqus.com/embed.js';
+
+              s.setAttribute('data-timestamp', +new Date());
+              (d.head || d.body).appendChild(s);
+            })();
+          </script>
+          <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+	  -->
+
+    </div>
+  </div>
+  <div class="column one-fourth">
+    
+<h3>Search</h3>
+<div id="site_search">
+    <input type="text" id="search_box" placeholder="Search">
+    <button class="btn btn-default" id="site_search_do"><span class="octicon octicon-search"></span></button>
+</div>
+
+<ul id="search_results"></ul>
+
+<link rel="stylesheet" type="text/css" href="/assets/css/modules/sidebar-search.css">
+<script src="/assets/js/lunr.min.js"></script>
+<script src="/assets/js/search.js"></script>
+
+
+    
+<h3 class="mobile-hidden">Post Directory</h3>
+<div id="post-directory-module" class="mobile-hidden">
+  <section class="post-directory">
+  <!-- Links that trigger the jumping -->
+  <!-- Added by javascript below -->
+  <dl></dl>
+  </section>
+</div>
+
+<script src="/assets/js/jquery.toc.js"></script>
+
+  </div>
+</div>
+</section>
+<!-- /section.content -->
+
+    <footer class="container">
+        <div class="site-footer" role="contentinfo">
+            <div class="copyright left mobile-block">
+                    © 2015
+                    <span title="FSilence">FSilence</span>
+                    <a href="javascript:window.scrollTo(0,0)" class="right mobile-visible">TOP</a>
+            </div>
+
+            <ul class="site-footer-links right mobile-hidden">
+                <li>
+                    <a href="javascript:window.scrollTo(0,0)" >TOP</a>
+                </li>
+            </ul>
+            <a href="http://github.com/FSilence/fsilence.github.io" target="_blank" aria-label="view source code">
+                <span class="mega-octicon octicon-mark-github" title="GitHub"></span>
+            </a>
+            <ul class="site-footer-links mobile-hidden">
+                
+                <li>
+                    <a href="/" title="首页" target="">首页</a>
+                </li>
+                
+                <li>
+                    <a href="/categories/" title="分类" target="">分类</a>
+                </li>
+                
+                <li>
+                    <a href="/wiki/" title="维基" target="">维基</a>
+                </li>
+                
+                <li>
+                    <a href="/links/" title="链接" target="">链接</a>
+                </li>
+                
+                <li>
+                    <a href="/about/" title="关于" target="">关于</a>
+                </li>
+                
+<!-- 注释Rss
+                <li><a href=""><span class="octicon octicon-rss" style="color:orange;"></span></a></li>
+ -->           
+		</ul>
+
+        </div>
+    </footer>
+    <!-- / footer -->
+    <script src="/assets/vendor/share.js/dist/js/share.min.js"></script>
+    <script src="/assets/js/geopattern.js"></script>
+    <script src="/assets/js/prism.js"></script>
+    <link rel="stylesheet" href="/assets/css/globals/prism.css">
+    <script>
+      jQuery(document).ready(function($) {
+        // geopattern
+        $('.geopattern').each(function(){
+          $(this).geopattern($(this).data('pattern-id'));
+        });
+       // hljs.initHighlightingOnLoad();
+      });
+    </script>
+    
+    <div style="display:none">
+      <script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-80669434-1', 'auto');
+        ga('send', 'pageview');
+
+      </script>
+    </div>
+    
+</body>
+</html>

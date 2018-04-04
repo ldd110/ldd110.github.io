@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-cmn-Hans" prefix="og: http://ogp.me/ns#" class="han-init">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <title>okHttp各个module介绍 &mdash; FSilence's Blog</title>
+    <link rel="stylesheet" href="/assets/vendor/primer-css/css/primer.css">
+    <link rel="stylesheet" href="/assets/vendor/primer-markdown/dist/user-content.min.css">
+    <link rel="stylesheet" href="/assets/vendor/octicons/octicons/octicons.css">
+    <link rel="stylesheet" href="/assets/css/components/collection.css">
+    <link rel="stylesheet" href="/assets/css/components/repo-card.css">
+    <link rel="stylesheet" href="/assets/css/sections/repo-list.css">
+    <link rel="stylesheet" href="/assets/css/sections/mini-repo-list.css">
+    <link rel="stylesheet" href="/assets/css/components/boxed-group.css">
+    <link rel="stylesheet" href="/assets/css/globals/common.css">
+    <link rel="stylesheet" href="/assets/vendor/share.js/dist/css/share.min.css">
+    <link rel="stylesheet" href="/assets/css/globals/responsive.css">
+    <link rel="stylesheet" href="/assets/css/posts/index.css">
+    <!-- Latest compiled and minified CSS -->
+    
+
+    
+    <link rel="canonical" href="http://localhost:4000/2017/06/13/okhttp-code-scanner/">
+    <link rel="alternate" type="application/atom+xml" title="FSilence's Blog" href="">
+    <link rel="shortcut icon" href="/favicon.ico">
+    
+    <meta property="og:title" content="okHttp各个module介绍">
+      
+    <meta name="keywords" content="okhttp, module">
+    <meta name="og:keywords" content="okhttp, module">
+      
+    <meta name="description" content="上一篇我们简单介绍了okHttp，了解了OkHttp的基本用法，并下载了okhttp的源码。本篇我们将一起来看看okhttp源码的目录结构，来大概了解下okHttp源码下的各个module的作用。">
+    <meta name="og:description" content="上一篇我们简单介绍了okHttp，了解了OkHttp的基本用法，并下载了okhttp的源码。本篇我们将一起来看看okhttp源码的目录结构，来大概了解下okHttp源码下的各个module的作用。">
+      
+    
+    
+        
+    
+    <meta property="og:url" content="http://localhost:4000/2017/06/13/okhttp-code-scanner/">
+    <meta property="og:site_name" content="FSilence's Blog">
+    <meta property="og:type" content="article">
+    <meta property="og:locale" content="zh_CN" />
+    
+    <meta property="article:published_time" content="2017-06-13">
+    
+    <script src="/assets/vendor/jquery/dist/jquery.min.js"></script>
+    <script src="/assets/js/jquery-ui.js"></script>
+    <script type="text/javascript">
+    function toggleMenu() {
+        var nav = document.getElementsByClassName("site-header-nav")[0];
+        if (nav.style.display == "inline-flex") {
+          nav.style.display = "none";
+        } else {
+          nav.style.display = "inline-flex";
+        }
+    }
+
+	var _hmt = _hmt || [];
+	(function() {
+		var hm = document.createElement("script");
+		hm.src = "https://hm.baidu.com/hm.js?3a8f3e5734d78efb8fc1edf92dadd19e";
+	var s = document.getElementsByTagName("script")[0]; 
+	s.parentNode.insertBefore(hm, s);
+	})();
+
+    </script>
+</head>
+<body class="" data-mz="">
+    <header class="site-header">
+        <div class="container">
+            <h1><a href="/" title="FSilence's Blog"><span class="octicon octicon-mark-github"></span> FSilence's Blog</a></h1>
+            <button class="collapsed mobile-visible" type="button" onclick="toggleMenu();">
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <nav class="site-header-nav" role="navigation">
+                
+                <a href="/" class=" site-header-nav-item" target="" title="首页">首页</a>
+                
+                <a href="/categories/" class=" site-header-nav-item" target="" title="分类">分类</a>
+                
+                <a href="/wiki/" class=" site-header-nav-item" target="" title="维基">维基</a>
+                
+                <a href="/links/" class=" site-header-nav-item" target="" title="链接">链接</a>
+                
+                <a href="/about/" class=" site-header-nav-item" target="" title="关于">关于</a>
+                
+            </nav>
+        </div>
+    </header>
+    <!-- / header -->
+
+    <section class="collection-head small geopattern" data-pattern-id="okHttp各个module介">
+<div class="container">
+  <div class="columns">
+    <div class="column three-fourths">
+      <div class="collection-title">
+        <h1 class="collection-header">okHttp各个module介绍</h1>
+        <div class="collection-info">
+          
+          <span class="meta-info">
+            <span class="octicon octicon-calendar"></span> 2017/06/13
+          </span>
+          
+          
+          <span class="meta-info">
+            <span class="octicon octicon-file-directory"></span>
+            <a href="/categories/#java" title="java">java</a>
+          </span>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+<!-- / .banner -->
+<section class="container content">
+<div class="columns">
+  <div class="column three-fourths" >
+    <article class="article-content markdown-body">
+    <p>上一篇我们简单介绍了okHttp，了解了OkHttp的基本用法，并下载了okhttp的源码。本篇我们将一起来看看okhttp源码的目录结构，来大概了解下okHttp源码下的各个module的作用。</p>
+
+<p>okHttp的构建工具使用的是maven，关于<a href="https://www.google.com.hk/#safe=strict&amp;q=maven">maven</a>可自行google,本文不对此做过多阐述。我们来重点看一下okHttp的项目目录。在这里以及之后的源码都是okHttp的最新版本 3.8.0。我们可以选择git工具checkout出 3.8.0的tag，本人使用的是idea自带的git管理工具，在右下角git分支出点击 选测checkout tag, 输入3.8.0的分支名字：parent-3.8.0 确认即可, 然后我们来看一下项目的目录结构截图:<br />
+<img src="/images/okhttp/okhttp-modules.png" alt="" /></p>
+
+<p>我们来看看各个module的功能作用，主要的借阅资料是module下的README.MD文件，读者也可自行查阅。</p>
+
+<h2 id="benchmarks">benchmarks</h2>
+<p>README.MD中的说明:</p>
+<pre>
+This module allows you to test the performance of HTTP clients.
+Running
+  1. If you made modifications to `Benchmark` run `mvn compile`.
+  2. Run `mvn exec:exec` to launch a new JVM, which will execute the benchmark.
+</pre>
+
+<p>用google caliper来测试HTTP客户端性能的，具体的使用我们先不加关注。</p>
+
+<h2 id="mockwebserver">mockwebserver</h2>
+<p>README.MD中的说明，我们这里只截取了介绍部分，具体的使用说明不做说明。</p>
+<pre>
+A scriptable web server for testing HTTP clients    
+**Motivation**  
+This library makes it easy to test that your app Does The Right Thing when it
+makes HTTP and HTTPS calls. It lets you specify which responses to return and
+then verify that requests were made as expected.  
+Because it exercises your full HTTP stack, you can be confident that you're
+testing everything. You can even copy &amp; paste HTTP responses from your real web
+server to create representative test cases. Or test that your code survives in
+awkward-to-reproduce situations like 500 errors or slow-loading responses.  
+**Example**   
+Use MockWebServer the same way that you use mocking frameworks like
+[Mockito](https://github.com/mockito/mockito):
+1. Script the mocks.
+2. Run application code.
+3. Verify that the expected requests were made.
+</pre>
+<p>此处省略了具体的demo部分，大致是说MockWebServer是用来在单元测试中来模拟网络请求用的，我们可以模拟一个网络返回来验证我们的网络调用。</p>
+
+<h2 id="okcurl">okcurl</h2>
+<p>来看README文件:</p>
+<pre>
+_A curl for the next-generation web._  
+OkCurl is an OkHttp-backed curl clone which allows you to test OkHttp's HTTP engine (including
+HTTP/2) against web servers.
+</pre>
+<p>用来离线测试okhttp引擎的。</p>
+
+<h2 id="okhttp">okhttp</h2>
+<p>我们将要研究的项目主体。</p>
+
+<h2 id="okhttp-android-support-okhttp-urlconnection-okhttp-apache">okhttp-android-support okhttp-urlconnection okhttp-apache</h2>
+<p>对其它http引擎的适配。</p>
+
+<h2 id="okhttp-hpacktests">okhttp-hpacktests</h2>
+<pre>
+These tests use the [hpack-test-case][1] project to validate OkHttp's HPACK
+implementation.  The HPACK test cases are in a separate git submodule, so to
+initialize them, you must run:
+
+    git submodule init
+    git submodule update
+
+TODO
+----
+
+ * Add maven goal to avoid manual call to git submodule init.
+ * Make hpack-test-case update itself from git, and run new tests.
+ * Add maven goal to generate stories and a pull request to hpack-test-case
+   to have others validate our output.
+
+[1]: https://github.com/http2jp/hpack-test-case 
+</pre>
+<p>这个是用来测试hpack的。HPACK是http 2.0的头部压缩算法。</p>
+
+<h2 id="okhttp-loggin-interceptor">okhttp-loggin-interceptor</h2>
+<pre>
+An [OkHttp interceptor][1] which logs HTTP request and response data.
+</pre>
+<p>日志输出的拦截器，关于interceptor之后再分析OkHttp的代码中我们会看到它的具体含义和使用。</p>
+
+<h2 id="okhttp-testing-support">okhttp-testing-support</h2>
+<p>对okhttp测试的一些基础能力支持。</p>
+
+<h2 id="okhttp-tests">okhttp-tests</h2>
+<p>okhttp自己的测试</p>
+
+<h2 id="samples">samples</h2>
+<p>demo</p>
+
+<h2 id="website">website</h2>
+<p>okhttp的介绍说明的静态网页。</p>
+
+<p>我们已大致了解了okhttp下的各个module，在后面的文章中我们将开始逐步进入okhttp的具体代码，来一步一步学习okhttp。</p>
+
+    
+
+    </article>
+    <div class="share">
+      <div class="share-component"></div>
+    </div>
+    <div class="comment">
+      
+  
+      
+        
+        
+        
+      
+	  
+	
+
+<!--
+          <div id="disqus_thread"></div>
+          <script>
+            var disqus_config = function () {
+              this.page.url = 'http://localhost:4000/2017/06/13/okhttp-code-scanner/';
+              this.page.identifier = '/2017/06/13/okhttp-code-scanner/';
+              this.page.title = 'okHttp各个module介绍';
+            };
+            (function() { // DON'T EDIT BELOW THIS LINE
+              var d = document, s = d.createElement('script');
+
+              s.type = 'text/javascript';
+              s.async = true;
+              var shortname = 'FSilence';
+
+              s.src = '//' + shortname + '.disqus.com/embed.js';
+
+              s.setAttribute('data-timestamp', +new Date());
+              (d.head || d.body).appendChild(s);
+            })();
+          </script>
+          <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+	  -->
+
+    </div>
+  </div>
+  <div class="column one-fourth">
+    
+<h3>Search</h3>
+<div id="site_search">
+    <input type="text" id="search_box" placeholder="Search">
+    <button class="btn btn-default" id="site_search_do"><span class="octicon octicon-search"></span></button>
+</div>
+
+<ul id="search_results"></ul>
+
+<link rel="stylesheet" type="text/css" href="/assets/css/modules/sidebar-search.css">
+<script src="/assets/js/lunr.min.js"></script>
+<script src="/assets/js/search.js"></script>
+
+
+    
+<h3 class="mobile-hidden">Post Directory</h3>
+<div id="post-directory-module" class="mobile-hidden">
+  <section class="post-directory">
+  <!-- Links that trigger the jumping -->
+  <!-- Added by javascript below -->
+  <dl></dl>
+  </section>
+</div>
+
+<script src="/assets/js/jquery.toc.js"></script>
+
+  </div>
+</div>
+</section>
+<!-- /section.content -->
+
+    <footer class="container">
+        <div class="site-footer" role="contentinfo">
+            <div class="copyright left mobile-block">
+                    © 2015
+                    <span title="FSilence">FSilence</span>
+                    <a href="javascript:window.scrollTo(0,0)" class="right mobile-visible">TOP</a>
+            </div>
+
+            <ul class="site-footer-links right mobile-hidden">
+                <li>
+                    <a href="javascript:window.scrollTo(0,0)" >TOP</a>
+                </li>
+            </ul>
+            <a href="http://github.com/FSilence/fsilence.github.io" target="_blank" aria-label="view source code">
+                <span class="mega-octicon octicon-mark-github" title="GitHub"></span>
+            </a>
+            <ul class="site-footer-links mobile-hidden">
+                
+                <li>
+                    <a href="/" title="首页" target="">首页</a>
+                </li>
+                
+                <li>
+                    <a href="/categories/" title="分类" target="">分类</a>
+                </li>
+                
+                <li>
+                    <a href="/wiki/" title="维基" target="">维基</a>
+                </li>
+                
+                <li>
+                    <a href="/links/" title="链接" target="">链接</a>
+                </li>
+                
+                <li>
+                    <a href="/about/" title="关于" target="">关于</a>
+                </li>
+                
+<!-- 注释Rss
+                <li><a href=""><span class="octicon octicon-rss" style="color:orange;"></span></a></li>
+ -->           
+		</ul>
+
+        </div>
+    </footer>
+    <!-- / footer -->
+    <script src="/assets/vendor/share.js/dist/js/share.min.js"></script>
+    <script src="/assets/js/geopattern.js"></script>
+    <script src="/assets/js/prism.js"></script>
+    <link rel="stylesheet" href="/assets/css/globals/prism.css">
+    <script>
+      jQuery(document).ready(function($) {
+        // geopattern
+        $('.geopattern').each(function(){
+          $(this).geopattern($(this).data('pattern-id'));
+        });
+       // hljs.initHighlightingOnLoad();
+      });
+    </script>
+    
+    <div style="display:none">
+      <script>
+        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+        m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+        })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+        ga('create', 'UA-80669434-1', 'auto');
+        ga('send', 'pageview');
+
+      </script>
+    </div>
+    
+</body>
+</html>
